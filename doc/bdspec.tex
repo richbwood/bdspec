@@ -1,0 +1,305 @@
+%% Copyright 2010 Richard Wood. All rights reserved.
+%% 
+%% Redistribution and use in source and binary forms, with or without
+%% modification, are permitted provided that the following conditions are met:
+%% 
+%%    1. Redistributions of source code must retain the above copyright notice,
+%%    this list of conditions and the following disclaimer.
+%% 
+%%    2. Redistributions in binary form must reproduce the above copyright
+%%    notice, this list of conditions and the following disclaimer in the
+%%    documentation and/or other materials provided with the distribution.
+%% 
+%% THIS SOFTWARE IS PROVIDED BY Richard Wood ``AS IS'' AND ANY EXPRESS OR
+%% IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+%% MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+%% EVENT SHALL <COPYRIGHT HOLDER> OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+%% INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+%% (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+%% LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+%% ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+%% (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+%% THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+%% 
+%% The views and conclusions contained in the software and documentation are
+%% those of the authors and should not be interpreted as representing official
+%% policies, either expressed or implied, of Richard Wood.
+
+\documentclass[10pt]{article}
+
+\usepackage{amsmath}
+\usepackage{algorithmic}
+\usepackage{colonequals}
+
+\newcommand{\bfb}{\mathbf{b}}
+\newcommand{\bfx}{\mathbf{x}}
+
+\newcommand{\BigO}{\mathcal{O}}
+
+\title{bdspec---Special-Band-Matrix Solver}
+\author{Richard Wood}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+bdspec solves band matrices, but with a twist.  Instead of the region above the
+highest superdiagonal containing zeros, it is filled with values identical to
+the highest superdiagonal element of the same row. Such matrices shall be
+referred to as special band matrices.
+
+Throughout, \texttt{lb} is the number of subdiagonals, \texttt{ub} is the
+number of superdiagonals, and \texttt{n}$\times$\texttt{n} is the dimension of the
+special band matrix.
+
+Some examples of special band matrices 
+\begin{alignat}{2}
+  \nonumber
+  &&&\hspace{3.5em}\mbox{\raisebox{-1em}{$\overbrace{\quad}^{\displaystyle\texttt{ub}=1}$}} \\
+  &\texttt{n}=6  &
+  &\left\{\left(
+  \begin{array}{cccccccc}
+    \alpha_0 & \beta_0 & \beta_0 & \beta_0 & \beta_0 &\beta_0 \\
+            & \alpha_1 & \beta_1 & \beta_1 & \beta_1 &\beta_1 \\
+            &         & \alpha_2 & \beta_2 & \beta_2 &\beta_2 \\
+            &         &         & \alpha_3 & \beta_3 &\beta_3 \\
+            &         &         &         & \alpha_4 &\beta_4 \\
+            &         &         &         &         &\alpha_5 \\
+  \end{array}
+  \right)\right.
+  ~,\\
+  \nonumber
+  &&&\hspace{10.2em}\mbox{\raisebox{2em}{${\displaystyle\texttt{lb}=0}$}}
+\end{alignat}
+\begin{alignat}{2}
+  \nonumber
+  &&&\hspace{4.0em}\mbox{\raisebox{-1em}{$\overbrace{\hspace{4em}}^{\displaystyle\texttt{ub}=2}$}} \\
+  &\texttt{n}=6  &
+  &\left\{\left(
+  \begin{array}{cccccccc}
+    \beta_0 & \gamma_0 & \delta_0 & \delta_0 & \delta_0 &\delta_0 \\
+    \alpha_1 & \beta_1 & \gamma_1 & \delta_1 & \delta_1 &\delta_1 \\
+            & \alpha_2 & \beta_2 & \gamma_2 & \delta_2 &\delta_2 \\
+            &         &  \alpha_3 & \beta_3 & \gamma_3 &\delta_3 \\
+            &         &         & \alpha_4 & \beta_4 &\gamma_4 \\
+            &         &         &         & \alpha_5 &\beta_5 \\
+  \end{array}
+  \right)\right.
+  ~.\\
+  \nonumber
+  &&&\hspace{10.0em}\mbox{\raisebox{2em}{$\underbrace{\hspace{1.0em}}_{\displaystyle\texttt{lb}=1}$}}
+\end{alignat}
+
+\section{Storage}
+
+The matrices are stored in compact form to save space. In compact form elements
+remain on their original row, but are shifted so that diagonals are stored in
+columns and repeated elements are removed.  \texttt{lb} columns of padding are
+added to the left to be used for LU factorization.  The compact versions of the
+two matrices above are stored in the arrays
+\begin{alignat}{2}
+  \nonumber
+  &&&\hspace{3.4em}\mbox{\raisebox{-1em}{$\overbrace{\quad}^{\displaystyle\texttt{ub}=1}$}} \\
+  &\texttt{n}=6  &
+  &\left\{\left(
+  \begin{array}{cc}
+    \alpha_0 & \beta_0 \\
+    \alpha_1 & \beta_1 \\
+    \alpha_2 & \beta_2 \\
+    \alpha_3 & \beta_3 \\
+    \alpha_4 & \beta_4 \\
+    \alpha_5 & * \\
+  \end{array}
+  \right)\right.
+  ~,
+\end{alignat}
+\begin{alignat}{2}
+  \nonumber
+  &&&\hspace{7.8em}\mbox{\raisebox{-1em}{$\overbrace{\hspace{3em}}^{\displaystyle\texttt{ub}=2}$}} \\
+  &\texttt{n}=6  &
+  &\left\{\left(
+  \begin{array}{ccccc}
+  *  &        *  & \beta_0 & \gamma_0 & \delta_0 \\
+  *  & \alpha_1 & \beta_1 & \gamma_1 & \delta_1 \\
+  *  & \alpha_2 & \beta_2 & \gamma_2 & \delta_2 \\
+  *  & \alpha_3 & \beta_3 & \gamma_3 & \delta_3 \\
+  *  & \alpha_4 & \beta_4 & \gamma_4 & * \\
+  *  & \alpha_5 & \beta_5 & *        & * \\
+  \end{array}
+  \right)\right.
+  ~,\\
+  \nonumber
+  &&&\hspace{3.1em}\mbox{\raisebox{2em}{$\underbrace{\hspace{1em}}_{\displaystyle\texttt{lb}=1}$}}
+\end{alignat}
+respectively, where $*$ indicates unused elements.
+
+For a special band matrix $A$, to solve the matrix problem $A\bfx =
+\bfb$ for vector $\bfx$ Crout LU decomposition with partial pivoting is performed.
+The factorization is performed in-place. The first \texttt{lb} columns of the
+compact array store the subdiagonals of lower triangular matrix $L$. The
+diagonal of matrix $L$ contains ones and is not stored. The remaining
+$\texttt{ub}+\texttt{lb}+1$ columns of the compact array store the diagonal and
+superdiagonals of the upper triangular matrix U. The rows of the compact array
+are re-ordered as pivoting takes place.
+
+A small example helps understand the storage of the LU decomposition.
+A special band matrix $A$ with $\texttt{n}=6$, $\texttt{lb}=1$, and $\texttt{ub}=2$:
+\begin{align}
+A=
+  \left(
+  \begin{array}{cccccc}
+\phantom{+}0.31 & \phantom{+}0.35 & -0.63 & -0.63 & -0.63 & -0.63\\
+-0.99 & -0.02 & -0.53 & -0.24 & -0.24 & -0.24\\
+      & -0.88 & -0.82 & \phantom{+}0.27 & -0.00 & -0.00\\
+      &       & \phantom{+}0.76 & \phantom{+}0.03 & \phantom{+}0.38 & \phantom{+}0.74\\
+      &       &       & -0.81 & -0.07 & \phantom{+}0.25\\
+      &       &       &       & \phantom{+}0.24 & -0.25\\
+  \end{array}
+  \right)
+  ~.
+\end{align}
+Compact storage of A:
+\begin{align}
+  \texttt{bA} = 
+  \left(
+  \begin{array}{cccccc}
+ *  &  *    & \phantom{+}0.31 & \phantom{+}0.35 & -0.63 &\\
+ *  & -0.99 & -0.02 & -0.53 & -0.24 &\\
+ *  & -0.88 & -0.82 & \phantom{+}0.27 & -0.00 &\\
+ *  & \phantom{+}0.76 & \phantom{+}0.03 & \phantom{+}0.38 & \phantom{+}0.74 &\\
+ *  & -0.81 & -0.07 & \phantom{+}0.25 &  *  &\\
+ *  & \phantom{+}0.24 & -0.25 &    *  &  *  &\\ 
+  \end{array}
+  \right)
+  ~.
+\end{align}
+The LU decomposition of A:
+\begin{align}
+L &= \left(
+ \begin{array}{cccccc}
+\phantom{\phantom{+}}1\phantom{.00}     &       &       &       &       &       \\
+      & \phantom{\phantom{+}}1\phantom{.00}     &       &       &       &       \\
+-0.31 & -0.39 & \phantom{\phantom{+}}1\phantom{.00}     &       &       &       \\
+      &       &       & \phantom{\phantom{+}}1\phantom{.00}     &       &       \\
+      &       &       &       & \phantom{\phantom{+}}1\phantom{.00}     &       \\
+      &       & -0.68 & \phantom{+}0.47 & -0.28 & \phantom{\phantom{+}}1\phantom{.00}     \\
+ \end{array}
+ \right)~, \\
+U &= \left(
+ \begin{array}{cccccc}
+-0.99 & -0.02 & -0.53 & -0.24 & -0.24 & -0.24 \\
+      & -0.88 & -0.82 & \phantom{+}0.27 & -0.00 & -0.00 \\
+      &       & -1.11 & -0.60 & -0.70 & -0.70 \\
+      &       &       & -0.81 & -0.07 & \phantom{+}0.25 \\
+      &       &       &       & \phantom{+}0.24 & -0.25 \\
+      &       &       &       &       & \phantom{+}0.07 \\
+ \end{array}
+ \right)
+ ~.
+\end{align}
+Compact storage of $L$ and $U$:
+\begin{align}
+  \texttt{bLU} =
+  \left(
+  \begin{array}{cccccc}
+-0.31 & -0.99 & -0.02 & -0.53 & -0.24 \\
+-0.39 & -0.88 & -0.82 & \phantom{+}0.27 & -0.00 \\
+-0.68 & -1.11 & -0.60 & -0.70 & -0.70 \\
+\phantom{+}0.47 & -0.81 & -0.07 & \phantom{+}0.25 &   *   \\
+-0.28 & \phantom{+}0.24 & -0.25 &   *   &   *   \\
+  *   & \phantom{+}0.07 &   *   &   *   &   *   \\
+  \end{array}
+  \right)
+\end{align}
+
+The reordering of the rows due to partial pivoting is stored in an integer array \texttt{indx}.
+To obtain the permutation matrix $P$ from \texttt{indx}:
+\begin{algorithmic}
+  \STATE Let $P \colonequals I = $ identity matrix
+  \FOR{$j = 0,1,2,\dots \texttt{n}-1$}
+  \STATE swap rows $j$ and \texttt{indx}$[j]$ of $P$
+  \ENDFOR
+\end{algorithmic}
+For the above example:
+\begin{align}
+  \texttt{indx} &= \left(
+  \begin{array}{cccccc}
+    1 & 2 & 0 & 4 & 5 & 3
+  \end{array}
+  \right)
+  \\
+  P &=
+  \left(
+  \begin{array}{cccccc}
+     &1& & & & \\
+     & &1& & & \\
+    1& & & & & \\
+     & & & &1& \\
+     & & & & &1 \\
+     & & &1& &  \\
+  \end{array}
+  \right)
+  ~.
+\end{align}
+
+\section{Functions}
+\texttt{void bdspecLUmlt(double *bA, int n, int lb, int ub, double x[], double out[]);}
+
+Calculates $A\bfx$ for special band matrix $A$ stored compactly in array
+\texttt{bA}. Results are stored in \texttt{out}.
+\vspace{1em}
+
+\texttt{void bdspecLUfactor(double *bA, int n, int lb, int ub, int indx[])}
+
+Performs an Crout $LU$ factorization for special band matrix stored compactly in array
+\texttt{bA}. Results are stored in-place as described above.
+\vspace{1em}
+
+\texttt{void bdspecLUfactorscale(double *bA, int n, int lb, int ub, int indx[])}
+
+The same as \texttt{bdspecLUfactor}, but partial pivoting is performed based on the size of
+elements after being normalized. Normalizing elements involves scaling them by
+the element of the largest magnitude that is in the same row.
+\vspace{1em}
+
+\texttt{void bdspecLUfactormeschscale(double *bA, int n, int lb, int ub, int indx[])}
+
+The same as \texttt{bdspecLUfactorscale},
+but deliberately includes a bug found in the meschach linear algebra library
+version 1.2A. The bug is seldom important, and deliberately including it allows careful
+testing against Meschach results.
+\vspace{1em}
+
+\texttt{void bdspecLUsolve(double *bLU, int n, int lb, int ub, int indx[], double b[])}
+
+Solve $LU\bfx = P\bfb$ for vector $\bfx$. As detailed above, $LU$ is stored
+compactly in array \texttt{bLU}, $P$ is stored compactly in \texttt{indx}.
+Results are stored in-place in \texttt{b}.
+
+\vspace{1em}
+
+Other included functions in \texttt{bdspec.c} are intended for testing only.
+Note that full testing requires the Meschach library to test against.  Self
+consistency tests are insufficient because special band matrices are
+often nearly singular---for some matrices large (or even infinite) errors are
+a fact of life and sometimes they are completely unacceptable.
+
+\section{Complexity}
+
+It should be noted that only \texttt{bdspecLUsolve} has been optimized, other
+functions are expected to be used less frequently.
+
+\texttt{bdspecLUmlt} is $\BigO\left(\texttt{n}\times(\texttt{lb+ub})\right)$
+
+\texttt{bdspecLUsolve} is $\BigO\left(\texttt{n}\times(\texttt{lb+ub})\right)$
+
+\texttt{bdspecLUfactor} and its cousins are 
+$\BigO\left(\texttt{n}\times\texttt{lb}\times(\texttt{lb+ub})\right)$
+
+\section{Bug Reports}
+
+Please send bug reports to \texttt{richbwood@gmail.com}
+
+\end{document}
+
