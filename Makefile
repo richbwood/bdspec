@@ -28,3 +28,8 @@
 all:
 	gcc -std=c99 -Wall -L/opt/local/lib -lmeschach -lm -O3 bdspec.c
 	time ./a.out
+
+style:
+	@echo "++++styling source files++++"
+	@astyle -A2 -s2 -U -O -o -Y -c *.c
+st: style

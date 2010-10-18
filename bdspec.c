@@ -1,15 +1,15 @@
 // Copyright 2010 Richard Wood. All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
+//
 //    1. Redistributions of source code must retain the above copyright notice,
 //    this list of conditions and the following disclaimer.
-// 
+//
 //    2. Redistributions in binary form must reproduce the above copyright
 //    notice, this list of conditions and the following disclaimer in the
 //    documentation and/or other materials provided with the distribution.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY Richard Wood ``AS IS'' AND ANY EXPRESS OR
 // IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
 // MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
@@ -20,7 +20,7 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 // THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 // The views and conclusions contained in the software and documentation are
 // those of the authors and should not be interpreted as representing official
 // policies, either expressed or implied, of Richard Wood.
@@ -31,7 +31,7 @@
 // Required by bdspec:
 #include <math.h>
 #include <float.h>
-#define SWAP(a, b) {double dum = (a); (a) = (b); (b) = dum;}
+#define SWAP(a, b) do {const double dum = (a); (a) = (b); (b) = dum;} while(0)
 #define MIN(a, b) ((a) > (b) ? (b) : (a))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
@@ -47,9 +47,10 @@
 
 // Required for testing only:
 // Dump matrix 'a' to stdout
-void m_out(double *a, int n, int m) {
+void
+m_out(const double *a, const int n, const int m) {
   const int d = 3; //digits of accuracy
-  double(*aa)[m] = (double(*)[m])a;
+  const double(*aa)[m] = (const double(*)[m])a;
   for(int i = 0; i < n; i++) {
     printf("[%2d]", i);
     for(int j = 0; j < m; j++) {
@@ -65,45 +66,45 @@ void m_out(double *a, int n, int m) {
 
 // Required for testing only:
 // Dump vector 'a' to stdout
-void v_out(double a[], int len) {
+void
+v_out(const double a[], const int len) {
   const int d = 3; //digits of accuracy
-  for(int i = 0; i < len; i++) {
+  for(int i = 0; i < len; i++)
     printf("[%2d] %*.*f\n", i, d+3, d, a[i]);
-  }
   printf("\n");
 }
 
 // Required for testing only:
 // Dump permutation 'p' to stdout
-void p_out(int p[], int len) {
-  for(int i = 0; i < len; i++) {
+void
+p_out(const int p[], const int len) {
+  for(int i = 0; i < len; i++)
     printf("[%2d] %2d\n", i, p[i]);
-  }
   printf("\n");
 }
 
 // Required for testing only:
 // Fill 'a' with zeros
-void zero(double a[], int len) {
-  for(int i = 0; i < len; i++) {
+void
+zero(double a[], const int len) {
+  for(int i = 0; i < len; i++)
     a[i] = 0.0;
-  }
 }
 
 // Required for testing only:
 // Fill 'a' with random numbers uniformly distributed between -1 and 1
-void  randlist(double a[], int len) {
-  for(int i = 0; i < len; i++) {
+void
+randlist(double a[], const int len) {
+  for(int i = 0; i < len; i++)
     a[i] = 2.0*drand48()-1.0;
-  }
 }
 
 // Required for testing only:
 // Calculate the L_2 norm of a-b
-double v_diff(double a[], double b[], int len) {
+double v_diff(const double a[], const double b[], const int len) {
   double acc = 0.0;
   for(int i = 0; i < len; i++) {
-    double diff = a[i]-b[i];
+    const double diff = a[i]-b[i];
     acc += diff*diff;
   }
   return sqrt(acc);
@@ -115,21 +116,23 @@ double v_diff(double a[], double b[], int len) {
 // of bA is stored in the jth row of band A (bA) as follows: bA[i][2*lb+j-i] =
 // A[i][j] for max(0, i-lb) <= j <= min(A->n-1, i+ub); Note that the first lb
 // columns of bA are unused!
-void bdspecLUmlt(double *bA, int n, int lb, int ub, double x[], double out[]) {
-  int mm = 2*lb+ub+1;
-  double(*a)[mm] = (double(*)[mm])bA;
+void
+bdspecLUmlt(const double *bA, const int n, const int lb, const int ub,
+            const double x[], double out[]) {
+  const int mm = 2*lb+ub+1;
+  const double(*a)[mm] = (const double(*)[mm])bA;
   double acc = 0.0;
   for(int i = n-1; i >= 0; i--) {
     {
-      int k = i-2*lb;
+      const int k = i-2*lb;
+      const int j0 = MAX(lb, -k);
+      const int j1 = MIN(mm-1, n-k);
       out[i] = 0.0;
-      int j0 = MAX(lb, -k);
-      int j1 = MIN(mm-1, n-k);
       for(int j = j0, l = j0+k; j < j1; j++, l++)
         out[i] += a[i][j]*x[l];
     }
     {
-      int k = ub+i;
+      const int k = ub+i;
       if(k < n) {
         acc += x[k];
         out[i] += a[i][mm-1]*acc;
@@ -149,8 +152,9 @@ void bdspecLUmlt(double *bA, int n, int lb, int ub, double x[], double out[]) {
 // matrix L are ones, other nonzero elements of lower triangular matrix L is
 // stored in columns 0 to lb-1.
 // -- Array indx stores the row re-ordering that takes place
-void bdspecLUfactor(double *bA, int n, int lb, int ub, int indx[]) {
-  int mm = 2*lb+ub+1;
+void
+bdspecLUfactor(double *bA, const int n, const int lb, const int ub, int indx[]) {
+  const int mm = 2*lb+ub+1;
   double(*a)[mm] = (double(*)[mm])bA;
   // Ensure repeated columns are repeated
   for(int k = 0; k < n; k++)
@@ -170,7 +174,7 @@ void bdspecLUfactor(double *bA, int n, int lb, int ub, int indx[]) {
     double maxa0 = fabs(a[k][lb]);
     int i = k;
     for(int j = k+1; j < l; j++) {
-      double fabsa = fabs(a[j][lb]);
+      const double fabsa = fabs(a[j][lb]);
       if(fabsa > maxa0) {
         maxa0 = fabsa;
         i = j;
@@ -182,13 +186,12 @@ void bdspecLUfactor(double *bA, int n, int lb, int ub, int indx[]) {
     if(maxa0 == 0.0) // If singular, give up and go to the next row
       continue;
     // Interchange rows
-    if(i != k) {
+    if(i != k)
       for(int j = lb; j < mm; j++)
         SWAP(a[k][j], a[i][j]);
-    }
     // Perform LU factorisation
     for(i = k+1; i < l; i++) {
-      double fac = a[i][lb]/a[k][lb];
+      const double fac = a[i][lb]/a[k][lb];
       a[k][i-k-1] = fac;
       for(int j = 1+lb; j < mm; j++)
         a[i][j-1] = a[i][j]-fac*a[k][j];
@@ -200,8 +203,10 @@ void bdspecLUfactor(double *bA, int n, int lb, int ub, int indx[]) {
 // Same as bdspecLUfactor, but pivots on rows that are normalized such that the
 // greatest element in each row is +1 or -1. Note that this only affects which
 // elements are pivoted: the resulting LU factorization is not normalized.
-void bdspecLUfactorscale(double *bA, int n, int lb, int ub, int indx[]) {
-  int mm = 2*lb+ub+1;
+void
+bdspecLUfactorscale(double *bA, const int n, const int lb, const int ub,
+                    int indx[]) {
+  const int mm = 2*lb+ub+1;
   double(*a)[mm] = (double(*)[mm])bA;
   double scale[n];
   // Ensure repeated columns are repeated
@@ -211,9 +216,9 @@ void bdspecLUfactorscale(double *bA, int n, int lb, int ub, int indx[]) {
   // Calculate the scale of each row
   for(int i = 0; i < n; i++) {
     double max = 0.0;
-    int k = i-2*lb;
-    int j0 = MAX(lb, -k);
-    int j1 = MIN(mm, n-k);
+    const int k = i-2*lb;
+    const int j0 = MAX(lb, -k);
+    const int j1 = MIN(mm, n-k);
     for(int j = j0; j < j1; j++)
       max = fmax(fabs(a[i][j]), max);
     scale[i] = max;
@@ -231,15 +236,14 @@ void bdspecLUfactorscale(double *bA, int n, int lb, int ub, int indx[]) {
     // Find the pivot element:
     double maxa0 = 0.0;
     int i = -1;
-    for(int j = k; j < l; j++) {
+    for(int j = k; j < l; j++)
       if(scale[j] >= DBL_EPSILON*fabs(a[j][lb])) {
-        double temp = fabs(a[j][lb])/scale[j];
+        const double temp = fabs(a[j][lb])/scale[j];
         if(temp > maxa0) {
           maxa0 = temp;
           i = j;
         }
       }
-    }
     // Store pivot row index:
     indx[k] = i;
     // Check if singular
@@ -255,7 +259,7 @@ void bdspecLUfactorscale(double *bA, int n, int lb, int ub, int indx[]) {
     }
     // Perform LU factorisation
     for(i = k+1; i < l; i++) {
-      double fac = a[i][lb]/a[k][lb];
+      const double fac = a[i][lb]/a[k][lb];
       a[k][i-k-1] = fac;
       for(int j = 1+lb; j < mm; j++)
         a[i][j-1] = a[i][j]-fac*a[k][j];
@@ -266,8 +270,10 @@ void bdspecLUfactorscale(double *bA, int n, int lb, int ub, int indx[]) {
 
 // Same as bdspecLUfactorscale, but includes a big found in meschach 1.2.
 // Having identical bugs allows testing of the LU factorization
-void bdspecLUfactormeschscale(double *bA, int n, int lb, int ub, int indx[]) {
-  int mm = 2*lb+ub+1;
+void
+bdspecLUfactormeschscale(double *bA, const int n, const int lb, const int ub,
+                         int indx[]) {
+  const int mm = 2*lb+ub+1;
   double(*a)[mm] = (double(*)[mm])bA;
   double scale[n];
   // Ensure repeated columns are repeated
@@ -277,9 +283,9 @@ void bdspecLUfactormeschscale(double *bA, int n, int lb, int ub, int indx[]) {
   // Calculate the scale of each row
   for(int i = 0; i < n; i++) {
     double max = 0.0;
-    int k = i-2*lb;
-    int j0 = MAX(lb, -k);
-    int j1 = MIN(mm, n-k);
+    const int k = i-2*lb;
+    const int j0 = MAX(lb, -k);
+    const int j1 = MIN(mm, n-k);
     for(int j = j0; j < j1; j++)
       max = fmax(fabs(a[i][j]), max);
     scale[i] = max;
@@ -297,15 +303,14 @@ void bdspecLUfactormeschscale(double *bA, int n, int lb, int ub, int indx[]) {
     // Find the pivot element:
     double maxa0 = 0.0;
     int i = -1;
-    for(int j = k; j < l; j++) {
+    for(int j = k; j < l; j++)
       if(scale[j] >= DBL_EPSILON*fabs(a[j][lb])) {
-        double temp = fabs(a[j][lb])/scale[j];
+        const double temp = fabs(a[j][lb])/scale[j];
         if(temp > maxa0) {
           maxa0 = temp;
           i = j;
         }
       }
-    }
     // Store pivot row index:
     indx[k] = i;
     // Check if singular
@@ -322,7 +327,7 @@ void bdspecLUfactormeschscale(double *bA, int n, int lb, int ub, int indx[]) {
     }
     // Perform LU factorisation
     for(i = k+1; i < l; i++) {
-      double fac = a[i][lb]/a[k][lb];
+      const double fac = a[i][lb]/a[k][lb];
       a[k][i-k-1] = fac;
       for(int j = 1+lb; j < mm; j++)
         a[i][j-1] = a[i][j]-fac*a[k][j];
@@ -338,9 +343,11 @@ void bdspecLUfactormeschscale(double *bA, int n, int lb, int ub, int indx[]) {
 // diagonals of lower triangular matrix L are ones, other nonzero elements of
 // lower triangular matrix L is stored in columns 0 to lb-1.
 // -- Array indx stores the row reordering required
-void bdspecLUsolve(double *bLU, int n, int lb, int ub, int indx[], double b[]) {
-  int mm = 2*lb+ub+1;
-  double(*a)[mm] = (double(*)[mm])bLU;
+void
+bdspecLUsolve(const double *bLU, const int n, const int lb, const int ub,
+              const int indx[], double b[]) {
+  const int mm = 2*lb+ub+1;
+  const double(*a)[mm] = (const double(*)[mm])bLU;
   // Forward substitution:
   for(int k = 0, l = lb+1; k < n; k++, l++) {
     l = MIN(l, n);
@@ -359,7 +366,7 @@ void bdspecLUsolve(double *bLU, int n, int lb, int ub, int indx[], double b[]) {
       acc -= a[i][k]*b[j];
     }
     {
-      int k = MAX(ub+lb, 1)+i;
+      const int k = MAX(ub+lb, 1)+i;
       if(k < n) {
         acc2 += b[k];
         acc -= a[i][mm-1]*acc2;
@@ -369,7 +376,8 @@ void bdspecLUsolve(double *bLU, int n, int lb, int ub, int indx[], double b[]) {
   }
 }
 
-void test(int n, int lb, int ub, bool dumpfull) {
+void
+test(const int n, const int lb, const int ub, bool dumpfull) {
   // Generate a special-band-matrix mfull With lb lower diagonals, ub upper
   // diagonals and the elements of the highest upper diagonal extended across
   // each row
@@ -391,27 +399,22 @@ void test(int n, int lb, int ub, bool dumpfull) {
   // Next column for diagonal
   // Next ub columns for upper diagonals
   // as the highest upper diagonal of the same row
-  int mm = 2*lb+ub+1;
+  const int mm = 2*lb+ub+1;
   double mcmpct[n][mm];
   zero(&mcmpct[0][0], n*mm);
-  for(int i = 0; i < n; i++) {
-    for(int j = MAX(i-lb, 0); j < MIN(i+ub+1, n); j++) {
+  for(int i = 0; i < n; i++)
+    for(int j = MAX(i-lb, 0); j < MIN(i+ub+1, n); j++)
       mcmpct[i][j-i+lb+lb] = me[i][j];
-    }
-  }
   // Replace unused values with NAN to be sure they aren't used
   for(int k = 0; k < n; k++)
     for(int i = 0; i < lb; i++)
       mcmpct[k][i] = NAN;
-  for(int k = 0; k < lb; k++) {
-    for(int i = 0; i < lb-k; i++) {
+  for(int k = 0; k < lb; k++)
+    for(int i = 0; i < lb-k; i++)
       mcmpct[k][i+lb] = NAN;
-    }
-  }
-  for(int k=n-1; k >= n-ub; k--) {
+  for(int k=n-1; k >= n-ub; k--)
     for(int i = n-1-k+1+lb; i < mm; i++)
       mcmpct[k][i+lb] = NAN;
-  }
 
   // Generate start vector x1 for test
   VEC *x1 = v_get(n);
@@ -427,7 +430,7 @@ void test(int n, int lb, int ub, bool dumpfull) {
 
   if(dumpfull) {
     printf("Vector x (random values)\n");
-    printf("=======================\n");
+    printf("========================\n");
     v_out(x1->ve, n);
 
     printf("Matrix A (random values)\n");
@@ -499,10 +502,11 @@ void test(int n, int lb, int ub, bool dumpfull) {
 }
 
 
-int main() {
+int
+main(void) {
   srand48(time(NULL));
 
-  test(8,1,2,true);
+  test(8, 1, 2, true);
 
   printf("Testing with a whole lot of numbers...\n");
   printf("(Note that bdspec error is only large when Meschach error is large)\n\n");
