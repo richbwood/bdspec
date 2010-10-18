@@ -110,6 +110,22 @@ double v_diff(const double a[], const double b[], const int len) {
   return sqrt(acc);
 }
 
+// Required for testing only:
+// Calculate the L_2 norm squared of a
+double v_normsq(const double a[], const int len) {
+  double acc = 0.0;
+  for(int i = 0; i < len; i++) {
+    acc += a[i]*a[i];
+  }
+  return acc;
+}
+
+// Required for testing only:
+// Calculate the L_2 norm of a
+double v_norm(const double a[], const int len) {
+  return sqrt(v_normsq(a, len));
+}
+
 // Calculates bA*x for (n*n) special-band-matrix bA and (n) vector x.
 // -- the (n*n) matrix A is stored in band storage array bA of dimension
 // (n*[2*lb+1+ub]). Elements are stored in columns lb to 2*lb+ub.  The jth row
@@ -448,7 +464,12 @@ test(const int n, const int lb, const int ub, bool dumpfull) {
     v_out(dcmpct, n);
     printf("L2 norm of difference between Meschach and bdspec calculations of d\n");
   }
-  printf("d diff:%12E\t", v_diff(dfull->ve, dcmpct, n));
+  double ddiff = v_diff(dfull->ve, dcmpct, n);
+  printf("d diff=%6.0E ", ddiff);
+  if(ddiff*ddiff > DBL_EPSILON*v_normsq(dfull->ve, n))
+    printf("FAIL,");
+  else
+    printf("PASS,");
 
   PERM  *p = px_get(n);
   LUfactor(mfull, p);
@@ -487,14 +508,31 @@ test(const int n, const int lb, const int ub, bool dumpfull) {
     printf("L2 norm of difference between Meschach and bdspec calculations of y:\n");
   }
 
-  printf("y diff:%12E\t", v_diff(yfull->ve, ycmpct, n));
+  double ydiff = v_diff(yfull->ve, ycmpct, n);
+  printf("y diff=%6.0E ", ydiff);
+  if(ydiff*ydiff > DBL_EPSILON*v_normsq(yfull->ve, n))
+    printf("FAIL,");
+  else
+    printf("PASS,");
   if(dumpfull) {
     printf("\n\n");
     printf("L2 norm of error = y-x\n");
     printf("======================\n");
   }
-  printf("mesch err:%12E\t", v_diff(yfull->ve, x1->ve, n));
-  printf("bdspec y err:%12E", v_diff(ycmpct, x1->ve, n));
+  double x1normsq = v_normsq(x1->ve, n);
+  double mescherr = v_diff(yfull->ve, x1->ve, n);
+  printf("mesch err=%6.0E ", mescherr);
+  if(mescherr*mescherr > DBL_EPSILON*x1normsq)
+    printf("FAIL,");
+  else
+    printf("PASS,");
+  double bdspecerr = v_diff(ycmpct, x1->ve, n);
+  printf("bdspec err=%6.0E ", bdspecerr);
+  if(bdspecerr*bdspecerr > DBL_EPSILON*x1normsq)
+    printf("FAIL ");
+  else
+    printf("PASS ");
+
   if(dumpfull) {
     printf("\n\n");
   }
@@ -509,11 +547,11 @@ main(void) {
   test(8, 1, 2, true);
 
   printf("Testing with a whole lot of numbers...\n");
-  printf("(Note that bdspec error is only large when Meschach error is large)\n\n");
+  printf("(bdspec should only fail when Meschac does)\n\n");
   for(int i = 0; i < 4; i++)
     for(int j = 0; j <= i; j++)
       for(int n = 8; n < 2048; n *= 2) {
-        printf("n=%4d, lb=%d, ub=%d  ", n, i-j, j);
+        printf("n=%4d,lb=%d,ub=%d,", n, i-j, j);
         test(n, i-j, j, false);
         printf("\n");
       }
