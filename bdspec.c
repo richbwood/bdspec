@@ -172,10 +172,6 @@ void
 bdspecLUfactor(double *bA, const int n, const int lb, const int ub, int indx[]) {
   const int mm = 2*lb+ub+1;
   double(*a)[mm] = (double(*)[mm])bA;
-  // Ensure repeated columns are repeated
-  for(int k = 0; k < n; k++)
-    for(int j = mm; j < mm; j++)
-      a[k][j] = a[k][mm-1];
   // Rearrange the storage:
   for(int i = 0, l = lb; i < lb; i++, l--) {
     for(int j = lb+lb-i; j < mm; j++)
@@ -199,7 +195,7 @@ bdspecLUfactor(double *bA, const int n, const int lb, const int ub, int indx[]) 
     // Store pivot row index:
     indx[k] = i;
     // Check if singular
-    if(maxa0 == 0.0) // If singular, give up and go to the next row
+    if(0.0 == maxa0) // If singular, give up and go to the next row
       continue;
     // Interchange rows
     if(i != k)
@@ -225,10 +221,6 @@ bdspecLUfactorscale(double *bA, const int n, const int lb, const int ub,
   const int mm = 2*lb+ub+1;
   double(*a)[mm] = (double(*)[mm])bA;
   double scale[n];
-  // Ensure repeated columns are repeated
-  for(int k = 0; k < n; k++)
-    for(int j = mm; j < mm; j++)
-      a[k][j] = a[k][mm-1];
   // Calculate the scale of each row
   for(int i = 0; i < n; i++) {
     double max = 0.0;
@@ -263,7 +255,7 @@ bdspecLUfactorscale(double *bA, const int n, const int lb, const int ub,
     // Store pivot row index:
     indx[k] = i;
     // Check if singular
-    if(i == -1) { // If singular continue to next row
+    if(-1 == i) { // If singular continue to next row
       a[k][lb] = 0.0;
       continue;
     }
@@ -292,10 +284,6 @@ bdspecLUfactormeschscale(double *bA, const int n, const int lb, const int ub,
   const int mm = 2*lb+ub+1;
   double(*a)[mm] = (double(*)[mm])bA;
   double scale[n];
-  // Ensure repeated columns are repeated
-  for(int k = 0; k < n; k++)
-    for(int j = mm; j < mm; j++)
-      a[k][j] = a[k][mm-1];
   // Calculate the scale of each row
   for(int i = 0; i < n; i++) {
     double max = 0.0;
@@ -330,7 +318,7 @@ bdspecLUfactormeschscale(double *bA, const int n, const int lb, const int ub,
     // Store pivot row index:
     indx[k] = i;
     // Check if singular
-    if(i == -1) { // If singular continue to next row
+    if(-1 == i) { // If singular continue to next row
       a[k][lb] = 0.0;
       continue;
     }
