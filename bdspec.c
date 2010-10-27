@@ -256,6 +256,7 @@ bdspecLUfactorscale(double *bA, const int n, const int lb, const int ub,
     indx[k] = i;
     // Check if singular
     if(-1 == i) { // If singular continue to next row
+      indx[k] = k;
       a[k][lb] = 0.0;
       continue;
     }
@@ -319,6 +320,7 @@ bdspecLUfactormeschscale(double *bA, const int n, const int lb, const int ub,
     indx[k] = i;
     // Check if singular
     if(-1 == i) { // If singular continue to next row
+      indx[k] = k;
       a[k][lb] = 0.0;
       continue;
     }
