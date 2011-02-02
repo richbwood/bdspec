@@ -26,7 +26,7 @@
 # policies, either expressed or implied, of Richard Wood.
 
 all:
-	gcc -std=c99 -Wall -L/opt/local/lib -lmeschach -lm -O3 bdspec.c
+	gcc -std=c99 -Wall -L/opt/local/lib -lmeschach -lm -O3 bdspec_test.c bdspec.c
 	time ./a.out
 
 style:
