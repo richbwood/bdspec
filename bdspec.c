@@ -277,7 +277,7 @@ bdspecLUfactorscale(double *bA, const int n, const int lb, const int ub,
   }
 }
 
-// Same as bdspecLUfactorscale, but includes a big found in meschach 1.2.
+// Same as bdspecLUfactorscale, but includes a bug found in meschach 1.2.
 // Having identical bugs allows testing of the LU factorization
 void
 bdspecLUfactormeschscale(double *bA, const int n, const int lb, const int ub,
