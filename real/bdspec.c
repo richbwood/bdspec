@@ -58,7 +58,7 @@ bdspecLUmlt(const double *bA, const int n, const int lb, const int ub,
   }
 }
 
-// bdspecLUfactor -- Gaussian elimination with partial pivoting
+// Gaussian elimination with partial pivoting
 // -- on entry, the (n*n) special-band-matrix A is stored in band storage array
 // bA of dimension (n*[2*lb+1+ub]). Elements are stored in columns lb to
 // 2*lb+ub.  The jth row of bA is stored in the jth row of A  as follows:
@@ -247,7 +247,7 @@ bdspecLUfactormeschscale(double *bA, const int n, const int lb, const int ub,
   }
 }
 
-// bdLUsolve -- given an LU factorisation in bA, solve bA*x=b for x
+// given an LU factorisation in bA, solve bA*x=b for x
 // -- Solution is stored in-place in array b.
 // -- L and U are stored together in array bLU.  Upper triangular matrix U is
 // stored with diagonal and lb+ub super-diagonals in columns lb to 2*lb+ub. The

@@ -50,8 +50,7 @@ zbdspecLUmlt(const bdspec_complex *bA, const int n, const int lb, const int ub,
       const int k = i-2*lb;
       const int j0 = MAX(lb, -k);
       const int j1 = MIN(mm-1, n-k);
-      out[i].r = 0.0;
-      out[i].i = 0.0;
+      out[i] = (bdspec_complex){0};
       for(int j = j0, l = j0+k; j < j1; j++, l++) {
         out[i].r += a[i][j].r*x[l].r-a[i][j].i*x[l].i;
         out[i].i += a[i][j].r*x[l].i+a[i][j].i*x[l].r;
@@ -69,7 +68,7 @@ zbdspecLUmlt(const bdspec_complex *bA, const int n, const int lb, const int ub,
   }
 }
 
-// zbdspecLUfactor -- Gaussian elimination with partial pivoting
+// Gaussian elimination with partial pivoting
 // -- on entry, the (n*n) special-band-matrix A is stored in band storage array
 // bA of dimension (n*[2*lb+1+ub]). Elements are stored in columns lb to
 // 2*lb+ub.  The jth row of bA is stored in the jth row of A  as follows:
@@ -176,8 +175,7 @@ zbdspecLUfactorscale(bdspec_complex *bA, const int n, const int lb, const int ub
     // Check if singular
     if(-1 == i) { // If singular continue to next row
       indx[k] = k;
-      a[k][lb].r = 0.0;
-      a[k][lb].i = 0.0;
+      a[k][lb] = (bdspec_complex){0.0};
       continue;
     }
     // Interchange rows
@@ -249,8 +247,7 @@ zbdspecLUfactormeschscale(bdspec_complex *bA, const int n, const int lb, const i
     // Check if singular
     if(-1 == i) { // If singular continue to next row
       indx[k] = k;
-      a[k][lb].r = 0.0;
-      a[k][lb].i = 0.0;
+      a[k][lb] = (bdspec_complex){0.0};
       continue;
     }
     // Interchange rows
@@ -279,7 +276,7 @@ zbdspecLUfactormeschscale(bdspec_complex *bA, const int n, const int lb, const i
   }
 }
 
-// bdspecLUsolve -- given an LU factorisation in bA, solve bA*x=b for x
+// given an LU factorisation in bA, solve bA*x=b for x
 // -- Solution is stored in-place in array b.
 // -- L and U are stored together in array bLU.  Upper triangular matrix U is
 // stored with diagonal and lb+ub super-diagonals in columns lb to 2*lb+ub. The
