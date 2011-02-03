@@ -183,7 +183,7 @@ test(const int n, const int lb, const int ub, bool dumpfull) {
 
   // Calculate mcmpct*x1 = dcmpct
   double dcmpct[n][2];
-  zbdspecLUmlt(&mcmpct[0][0][0], n, lb, ub, (double *)x1->ve, &dcmpct[0][0]);
+  zbdspecLUmlt((bdspec_complex*)&mcmpct[0][0][0], n, lb, ub, (bdspec_complex*)x1->ve, (bdspec_complex*)&dcmpct[0][0]);
 
   if(dumpfull) {
     printf("Vector x (random values)\n");
@@ -216,7 +216,7 @@ test(const int n, const int lb, const int ub, bool dumpfull) {
   zLUfactor(mfull, p);
 
   int indx[n];
-  zbdspecLUfactormeschscale(&mcmpct[0][0][0], n, lb, ub, indx);
+  zbdspecLUfactormeschscale((bdspec_complex*)&mcmpct[0][0][0], n, lb, ub, indx);
   //zbdspecLUfactorscale(&mcmpct[0][0][0], n, lb, ub, indx);
   //zbdspecLUfactor(&mcmpct[0][0][0], n, lb, ub, indx);
 
@@ -227,7 +227,7 @@ test(const int n, const int lb, const int ub, bool dumpfull) {
     ycmpct[i][0] = dcmpct[i][0];
     ycmpct[i][1] = dcmpct[i][1];
   }
-  zbdspecLUsolve(&mcmpct[0][0][0], n, lb, ub, indx, &ycmpct[0][0]);
+  zbdspecLUsolve((bdspec_complex*)&mcmpct[0][0][0], n, lb, ub, indx, (bdspec_complex*)&ycmpct[0][0]);
 
   if(dumpfull) {
     printf("\n\n");

@@ -27,12 +27,8 @@
 
 #include "zbdspec.h"
 
-typedef struct  {
-  double r, i;
-} complex;
-
 #define SWAP(a, b) do {const double dum = (a); (a) = (b); (b) = dum;} while(0)
-#define ZSWAP(a, b) do {const complex dum = (a); (a) = (b); (b) = dum;} while(0)
+#define ZSWAP(a, b) do {const bdspec_complex dum = (a); (a) = (b); (b) = dum;} while(0)
 #define MIN(a, b) ((a) > (b) ? (b) : (a))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define cabssqr(a) ((a).r*(a).r+(a).i*(a).i)
@@ -44,32 +40,30 @@ typedef struct  {
 // A[i][j] for max(0, i-lb) <= j <= min(A->n-1, i+ub); Note that the first lb
 // columns of bA are unused!
 void
-zbdspecLUmlt(const double *bA, const int n, const int lb, const int ub,
-            const double x[], double out[]) {
+zbdspecLUmlt(const bdspec_complex *bA, const int n, const int lb, const int ub,
+            const bdspec_complex x[], bdspec_complex out[]) {
   const int mm = 2*lb+ub+1;
-  const complex(*a)[mm] = (const complex(*)[mm])bA;
-  const complex *cx = (const complex *)x;
-  complex *cout = (complex *)out;
-  complex acc = {0};
+  const bdspec_complex(*a)[mm] = (const bdspec_complex(*)[mm])bA;
+  bdspec_complex acc = {0};
   for(int i = n-1; i >= 0; i--) {
     {
       const int k = i-2*lb;
       const int j0 = MAX(lb, -k);
       const int j1 = MIN(mm-1, n-k);
-      cout[i].r = 0.0;
-      cout[i].i = 0.0;
+      out[i].r = 0.0;
+      out[i].i = 0.0;
       for(int j = j0, l = j0+k; j < j1; j++, l++) {
-        cout[i].r += a[i][j].r*cx[l].r-a[i][j].i*cx[l].i;
-        cout[i].i += a[i][j].r*cx[l].i+a[i][j].i*cx[l].r;
+        out[i].r += a[i][j].r*x[l].r-a[i][j].i*x[l].i;
+        out[i].i += a[i][j].r*x[l].i+a[i][j].i*x[l].r;
       }
     }
     {
       const int k = ub+i;
       if(k < n) {
-        acc.r += cx[k].r;
-        acc.i += cx[k].i;
-        cout[i].r += a[i][mm-1].r*acc.r-a[i][mm-1].i*acc.i;
-        cout[i].i += a[i][mm-1].r*acc.i+a[i][mm-1].i*acc.r;
+        acc.r += x[k].r;
+        acc.i += x[k].i;
+        out[i].r += a[i][mm-1].r*acc.r-a[i][mm-1].i*acc.i;
+        out[i].i += a[i][mm-1].r*acc.i+a[i][mm-1].i*acc.r;
       }
     }
   }
@@ -87,9 +81,9 @@ zbdspecLUmlt(const double *bA, const int n, const int lb, const int ub,
 // stored in columns 0 to lb-1.
 // -- Array indx stores the row re-ordering that takes place
 void
-zbdspecLUfactor(double *bA, const int n, const int lb, const int ub, int indx[]) {
+zbdspecLUfactor(bdspec_complex *bA, const int n, const int lb, const int ub, int indx[]) {
   const int mm = 2*lb+ub+1;
-  complex(*a)[mm] = (complex(*)[mm])bA;
+  bdspec_complex(*a)[mm] = (bdspec_complex(*)[mm])bA;
   // Rearrange the storage:
   for(int i = 0, l = lb; i < lb; i++, l--) {
     for(int j = lb+lb-i; j < mm; j++)
@@ -122,7 +116,7 @@ zbdspecLUfactor(double *bA, const int n, const int lb, const int ub, int indx[])
       }
     // Perform LU factorisation
     for(i = k+1; i < l; i++) {
-      complex fac;
+      bdspec_complex fac;
       fac.r = (a[i][lb].r*a[k][lb].r+a[i][lb].i*a[k][lb].i)/maxa0;
       fac.i = (a[i][lb].i*a[k][lb].r-a[i][lb].r*a[k][lb].i)/maxa0;
       a[k][i-k-1] = fac;
@@ -139,10 +133,10 @@ zbdspecLUfactor(double *bA, const int n, const int lb, const int ub, int indx[])
 // greatest element in each row is +1 or -1. Note that this only affects which
 // elements are pivoted: the resulting LU factorization is not normalized.
 void
-zbdspecLUfactorscale(double *bA, const int n, const int lb, const int ub,
+zbdspecLUfactorscale(bdspec_complex *bA, const int n, const int lb, const int ub,
                     int indx[]) {
   const int mm = 2*lb+ub+1;
-  complex(*a)[mm] = (complex(*)[mm])bA;
+  bdspec_complex(*a)[mm] = (bdspec_complex(*)[mm])bA;
   double scale[n];
   // Calculate the scale of each row
   for(int i = 0; i < n; i++) {
@@ -196,7 +190,7 @@ zbdspecLUfactorscale(double *bA, const int n, const int lb, const int ub,
     // Perform LU factorisation
     for(i = k+1; i < l; i++) {
       const double denom = maxa0*scale[k];
-      complex fac;
+      bdspec_complex fac;
       fac.r = (a[i][lb].r*a[k][lb].r+a[i][lb].i*a[k][lb].i)/denom;
       fac.i = (a[i][lb].i*a[k][lb].r-a[i][lb].r*a[k][lb].i)/denom;
       a[k][i-k-1] = fac;
@@ -212,10 +206,10 @@ zbdspecLUfactorscale(double *bA, const int n, const int lb, const int ub,
 // Same as bdspecLUfactorscale, but includes a bug found in meschach 1.2.
 // Having identical bugs allows testing of the LU factorization
 void
-zbdspecLUfactormeschscale(double *bA, const int n, const int lb, const int ub,
+zbdspecLUfactormeschscale(bdspec_complex *bA, const int n, const int lb, const int ub,
                          int indx[]) {
   const int mm = 2*lb+ub+1;
-  complex(*a)[mm] = (complex(*)[mm])bA;
+  bdspec_complex(*a)[mm] = (bdspec_complex(*)[mm])bA;
   double scale[n];
   // Calculate the scale of each row
   for(int i = 0; i < n; i++) {
@@ -272,7 +266,7 @@ zbdspecLUfactormeschscale(double *bA, const int n, const int lb, const int ub,
       // Meschach above requires modified code here:
       //const double denom = maxa0*scale[k];
       const double denom = cabssqr(a[k][lb]);
-      complex fac;
+      bdspec_complex fac;
       fac.r = (a[i][lb].r*a[k][lb].r+a[i][lb].i*a[k][lb].i)/denom;
       fac.i = (a[i][lb].i*a[k][lb].r-a[i][lb].r*a[k][lb].i)/denom;
       a[k][i-k-1] = fac;
@@ -293,44 +287,43 @@ zbdspecLUfactormeschscale(double *bA, const int n, const int lb, const int ub,
 // lower triangular matrix L is stored in columns 0 to lb-1.
 // -- Array indx stores the row reordering required
 void
-zbdspecLUsolve(const double *bLU, const int n, const int lb, const int ub,
-              const int indx[], double b[]) {
+zbdspecLUsolve(const bdspec_complex *bLU, const int n, const int lb, const int ub,
+              const int indx[], bdspec_complex b[]) {
   const int mm = 2*lb+ub+1;
-  const complex(*a)[mm] = (const complex(*)[mm])bLU;
-  complex(*cb) = (complex(*))b;
+  const bdspec_complex(*a)[mm] = (const bdspec_complex(*)[mm])bLU;
   // Forward substitution:
   for(int k = 0, l = lb+1; k < n; k++, l++) {
     l = MIN(l, n);
     // b must be reordered during forward substitution, not before
     // quicker to swap without testing
-    ZSWAP(cb[k], cb[indx[k]]);
+    ZSWAP(b[k], b[indx[k]]);
     for(int i = k+1, j = 0; i < l; i++, j++) {
-      cb[i].r -= a[k][j].r*cb[k].r-a[k][j].i*cb[k].i;;
-      cb[i].i -= a[k][j].r*cb[k].i+a[k][j].i*cb[k].r;;
+      b[i].r -= a[k][j].r*b[k].r-a[k][j].i*b[k].i;;
+      b[i].i -= a[k][j].r*b[k].i+a[k][j].i*b[k].r;;
     }
   }
   // Backward substitution:
-  complex acc2 = {0};
+  bdspec_complex acc2 = {0};
   for(int i = n-1, l = 1+lb; i >= 0; i--, l++) {
     l = MIN(l, mm-1);
-    complex acc;
-    acc = cb[i];
+    bdspec_complex acc;
+    acc = b[i];
     for(int k = lb+1, j = i+1; k < l; k++, j++) {
-      acc.r -= a[i][k].r*cb[j].r-a[i][k].i*cb[j].i;
-      acc.i -= a[i][k].r*cb[j].i+a[i][k].i*cb[j].r;
+      acc.r -= a[i][k].r*b[j].r-a[i][k].i*b[j].i;
+      acc.i -= a[i][k].r*b[j].i+a[i][k].i*b[j].r;
     }
     {
       const int k = MAX(ub+lb, 1)+i;
       if(k < n) {
-        acc2.r += cb[k].r;
-        acc2.i += cb[k].i;
+        acc2.r += b[k].r;
+        acc2.i += b[k].i;
         acc.r -= a[i][mm-1].r*acc2.r-a[i][mm-1].i*acc2.i;
         acc.i -= a[i][mm-1].r*acc2.i+a[i][mm-1].i*acc2.r;
       }
     }
     const double denom = a[i][lb].r*a[i][lb].r+a[i][lb].i*a[i][lb].i;
-    cb[i].r = (acc.r*a[i][lb].r+acc.i*a[i][lb].i)/denom;
-    cb[i].i = (acc.i*a[i][lb].r-acc.r*a[i][lb].i)/denom;
+    b[i].r = (acc.r*a[i][lb].r+acc.i*a[i][lb].i)/denom;
+    b[i].i = (acc.i*a[i][lb].r-acc.r*a[i][lb].i)/denom;
   }
 }
 

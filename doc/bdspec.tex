@@ -297,6 +297,36 @@ functions are expected to be used less frequently.
 \texttt{bdspecLUfactor} and its cousins are 
 $\BigO\left(\texttt{n}\times\texttt{lb}\times(\texttt{lb+ub})\right)$
 
+\section{Complex versions}
+
+Complex versions of each routine exist:
+
+\texttt{void zbdspecLUmlt(bdspec\_complex *bA, int n, int lb, int ub, bdspec\_complex x[], bdspec\_complex out[]);}
+
+\texttt{void zbdspecLUfactor(bdspec\_complex *bA, int n, int lb, int ub, int indx[])}
+
+\texttt{void zbdspecLUfactorscale(bdspec\_complex *bA, int n, int lb, int ub, int indx[])}
+
+\texttt{void zbdspecLUfactormeschscale(bdspec\_complex *bA, int n, int lb, int ub, int indx[])}
+
+\texttt{void zbdspecLUsolve(bdspec\_complex *bLU, int n, int lb, int ub, int indx[], bdspec\_complex b[])}
+
+\vspace{1em}
+
+The \texttt{bdspec\_complex} type is defined:
+
+\vspace{1em}
+
+\texttt{ typedef struct  $\{$ double r, i; $\}$ bdspec\_complex; }
+
+\vspace{1em}
+
+and is binary compatible with both c++'s \texttt{complex<double>} class and
+c99's \texttt{complex double} type.
+
+The complex routines would be slightly neater written in c++ or c99.
+Standard c89 code has been used as it is the lowest common denominator.
+
 \section{Bug Reports}
 
 Please send bug reports to \texttt{richbwood@gmail.com}

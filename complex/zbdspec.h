@@ -32,14 +32,18 @@
 #include <math.h>
 #include <float.h>
 
-void zbdspecLUmlt(const double *bA, const int n, const int lb, const int ub,
-            const double x[], double out[]);
-void zbdspecLUfactor(double *bA, const int n, const int lb, const int ub, int indx[]);
-void zbdspecLUfactorscale(double *bA, const int n, const int lb, const int ub,
+typedef struct  {
+  double r, i;
+} bdspec_complex;
+
+void zbdspecLUmlt(const bdspec_complex *bA, const int n, const int lb, const int ub,
+            const bdspec_complex x[], bdspec_complex out[]);
+void zbdspecLUfactor(bdspec_complex *bA, const int n, const int lb, const int ub, int indx[]);
+void zbdspecLUfactorscale(bdspec_complex *bA, const int n, const int lb, const int ub,
                     int indx[]);
-void zbdspecLUfactormeschscale(double *bA, const int n, const int lb, const int ub,
+void zbdspecLUfactormeschscale(bdspec_complex *bA, const int n, const int lb, const int ub,
                          int indx[]);
-void zbdspecLUsolve(const double *bLU, const int n, const int lb, const int ub,
-              const int indx[], double b[]);
+void zbdspecLUsolve(const bdspec_complex *bLU, const int n, const int lb, const int ub,
+              const int indx[], bdspec_complex b[]);
 
 // vim: ft=cpp:ts=2:sw=2:et:sta:ai:si
